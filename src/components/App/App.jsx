@@ -1,22 +1,23 @@
-import './assets/css/bootstrap.min.css'
-import './assets/css/app.min.css'
-import './assets/css/icons.min.css'
+import '../../assets/css/app.min.css'
+import '../../assets/css/bootstrap.min.css'
+import '../../assets/css/icons.min.css'
 import {BrowserRouter as Router, Routes, Route} from "react-router-dom";
-import LoginForm from "./components/Login.jsx";
-import Home from "./components/Home.jsx";
+import LoginForm from "../Route/Login.jsx";
+import Home from "../Route/Home.jsx";
 import {useEffect, useState} from "react";
 import axios from "axios";
-import PrivateRoute from "./components/ProtectedRoute.jsx";
+import PrivateRoute from "../Route/ProtectedRoute.jsx";
+
 
 function App() {
     const [isAuthenticated, setIsAuthenticated] = useState(false)
-    const [loading, isloading] = useState(true)
+    const [loading, isLoading] = useState(true)
 
     async function checkAccess() {
         const token = localStorage.getItem("access_token")
         if (token) {
             try {
-                const response = await axios.post('http://localhost:8000/auth/jwt/verify.',
+                const response = await axios.post(`${import.meta.env.VITE_BACKEND_API}auth/jwt/verify.`,
                     {
                         token: `${token}`
                         }
@@ -31,7 +32,7 @@ function App() {
         } else {
             setIsAuthenticated(false)
         }
-        isloading(false)
+        isLoading(false)
     }
 
     useEffect(() => {

@@ -1,8 +1,8 @@
 import {useState} from 'react'
-import SideBar from "./SideBar/SideBar.jsx";
-import userImage from '../assets/images/users/user-dummy-img.jpg'
+import SideBar from "../SideBar/SideBar.jsx";
+import userImage from '../../assets/images/users/user-dummy-img.jpg'
 
-function Navbar({userInfo,setUserInfo, connectChatSocket }) {
+function Navbar({userInfo, setUserInfo, socketClose, connectChatSocket}) {
     const [tab, tabChange] = useState('Chat')
     const HandleTabChange = (tabName) => {
         tabChange(tabName)
@@ -193,7 +193,7 @@ function Navbar({userInfo,setUserInfo, connectChatSocket }) {
                                 id="pills-user-tab"
                                 data-bs-toggle="pill"
                                 role="tab"
-                               onClick={() => HandleTabChange('Profile')}
+                                onClick={() => HandleTabChange('Profile')}
 
                             >
                                 Profile <i className="bx bx-user-circle text-muted ms-1"/>
@@ -225,7 +225,8 @@ function Navbar({userInfo,setUserInfo, connectChatSocket }) {
             </div>
             {/* end side-menu nav */}
         </div>
-        <SideBar connectChatSocket={connectChatSocket}  tab={tab} tabChange={HandleTabChange} userInfo={userInfo} setUserInfo={setUserInfo}/>
+        <SideBar connectChatSocket={connectChatSocket} socketClose={socketClose} tab={tab} tabChange={HandleTabChange}
+                 userInfo={userInfo} setUserInfo={setUserInfo}/>
         {/* end left sidebar-menu */}
     </>
 

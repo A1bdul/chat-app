@@ -1,16 +1,15 @@
-import { useEffect, useState } from "react";
+import {useEffect, useRef, useState} from "react";
 import axios from "axios";
-import { key } from "localforage";
 
-export default function ChatSideBar({ userInfo, connectChatSocket }) {
+export default function ChatSideBar({ userInfo,socketClose, connectChatSocket }) {
     const [isLoading, setIsLoading] = useState(true)
     const [userList, setUserList] = useState(null)
     const [channelList, setChannelList] = useState(null)
-    const [activeChat, setActiveChat] =useState(null)
+    const [activeChat, setActiveChat] = useState(null)
 
     const getChatRoom = async () => {
         try {
-            const response = await axios.get("http://localhost:8000/api/all-room/.",
+            const response = await axios.get(`${import.meta.env.VITE_BACKEND_API}api/all-room/.`,
                 {
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem("access_token")}`
@@ -131,7 +130,8 @@ export default function ChatSideBar({ userInfo, connectChatSocket }) {
                         >
                             {userList.map((chats, key) => {
                                 const user2 = (userInfo.username !== userList[key]['user1'].username) ? userList[key]['user1'] : userList[key]['user2'];
-                                return (<li style={{ cursor: "pointer" }} onClick={() => {
+                                return (<li style={{ cursor:"pointer" }} onClick={() => {
+                                    socketClose(user2.username);
                                     connectChatSocket("users", user2.username, user2)
                                     setActiveChat(user2.username)
                                 }} className={`users-chatlist chatlist2 ${activeChat == user2.username ? "active" : ""}`} id={user2.username} key={chats.id} data-name="usersList">

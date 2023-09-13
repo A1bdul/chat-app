@@ -1,6 +1,6 @@
 import {useState} from 'react'
 import axios from "axios";
-import useDocumentTitle from './changeDocument';
+import useDocumentTitle from '../App/changeDocument.jsx';
 import {  useNavigate } from 'react-router-dom';
 
 function LoginForm({setIsAuthenticated}) {
@@ -14,7 +14,7 @@ function LoginForm({setIsAuthenticated}) {
     const getUserInfo = async (e) => {
         e.preventDefault();
         try {
-            const response = await axios.post('http://localhost:8000/auth/jwt/create/.',
+            const response = await axios.post(`${import.meta.env.VITE_BACKEND_API}auth/jwt/create/.`,
                 {email, password})
             localStorage.setItem('access_token', response.data["access"])
             setIsAuthenticated(true);
@@ -30,7 +30,7 @@ function LoginForm({setIsAuthenticated}) {
                     <div className="p-4 pb-0 p-lg-5 pb-lg-0 auth-logo-section">
                         <div className="text-white-50">
                             <h3>
-                                <a href="index.html" className="text-white">
+                                <a href="../../../index.html" className="text-white">
                                     <i className="bx bxs-message-alt-detail align-middle text-white h3 mb-1 me-2"/>{" "}
                                     ChatApp
                                 </a>

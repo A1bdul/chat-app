@@ -1,6 +1,10 @@
 import UserProfilePic from "../../assets/images/users/user-dummy-img.jpg"
+import {useEffect} from "react";
 
-export default function UserChat({user2, messages}){
+export default function UserChat({user2, messages, messagesScrollRef, messagesEndRef}){
+  useEffect(() => {
+    messagesEndRef()
+  }, [messages]);
     return  <div
       id="channel-chat"
       className="remove position-relative"
@@ -12,7 +16,7 @@ export default function UserChat({user2, messages}){
             <div className="d-flex align-items-center">
               <div className="flex-shrink-0 d-lg-none me-3">
                 <a
-                  href="javascript: void(0);"
+                  href=""
                   className="user-chat-remove font-size-18 p-1"
                 >
                   <i className="bx bx-chevron-left align-middle" />
@@ -288,7 +292,7 @@ export default function UserChat({user2, messages}){
                         </div>
                       </div>{" "}
                     </div>{" "}
-                  </li>))}
+                   </li>))} <div ref={messagesScrollRef}></div>
                    </ul>
                 </div>
               </div>
