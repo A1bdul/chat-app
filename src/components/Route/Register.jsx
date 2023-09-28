@@ -1,40 +1,28 @@
-import {useState} from 'react'
-import axios from "axios";
-import useDocumentTitle from '../App/changeDocument.jsx';
-import {  useNavigate } from 'react-router-dom';
+import useDocumentTitle from "../App/changeDocument.jsx";
 
-function LoginForm({setIsAuthenticated}) {
+function Register() {
 
-    useDocumentTitle("Login | ChatApp ")
-
-    const navigate = useNavigate()
-    const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
-
-    const getUserInfo = async (e) => {
-        e.preventDefault();
-        try {
-            const response = await axios.post(`${import.meta.env.VITE_BACKEND_API}auth/jwt/create/.`,
-                {email, password})
-            localStorage.setItem('access_token', response.data["access"])
-            setIsAuthenticated(true);
-            navigate("/")
-        } catch (e) {
-            console.log(e)
-        }
+    const getUserRegistered = async  () => {
+        await axios.post()
     }
-    return (<div className="auth-bg">
+    useDocumentTitle("Register| ChatApp")
+
+    return <div className="auth-bg">
         <div className="container-fluid p-0">
             <div className="row g-0">
                 <div className="col-xl-3 col-lg-4">
                     <div className="p-4 pb-0 p-lg-5 pb-lg-0 auth-logo-section">
                         <div className="text-white-50">
                             <h3>
-                                <a href="../../../index.html" className="text-white">
+                                <a href="index.html" className="text-white">
                                     <i className="bx bxs-message-alt-detail align-middle text-white h3 mb-1 me-2"/>{" "}
-                                    ChatApp
+                                    Doot
                                 </a>
                             </h3>
+                            <p className="font-size-16">Responsive Bootstrap 5 Chat App</p>
+                        </div>
+                        <div className="mt-auto">
+                            <img src="assets/images/auth-img.png" alt="" className="auth-img"/>
                         </div>
                     </div>
                 </div>
@@ -46,76 +34,79 @@ function LoginForm({setIsAuthenticated}) {
                                 <div className="col-sm-8 col-lg-6 col-xl-5 col-xxl-4">
                                     <div className="py-md-5 py-4">
                                         <div className="text-center mb-5">
-                                            <h3>Welcome Back !</h3>
-                                            <p className="text-muted">Sign in to continue.</p>
+                                            <h3>Register Account</h3>
+                                            <p className="text-muted">
+                                                Get your free Doot account now.
+                                            </p>
                                         </div>
-                                        <form onSubmit={getUserInfo}>
+                                        <form
+                                            className="needs-validation"
+                                            noValidate=""
+                                            onSubmit={getUserRegistered}
+                                        >
+                                            <div className="mb-3">
+                                                <label htmlFor="useremail" className="form-label">
+                                                    Email
+                                                </label>
+                                                <input
+                                                    type="email"
+                                                    className="form-control"
+                                                    id="useremail"
+                                                    placeholder="Enter email"
+                                                    required=""
+                                                />
+                                                <div className="invalid-feedback">Please Enter Email</div>
+                                            </div>
                                             <div className="mb-3">
                                                 <label htmlFor="username" className="form-label">
-                                                    Email
+                                                    Username
                                                 </label>
                                                 <input
                                                     type="text"
                                                     className="form-control"
-                                                    onChange={(e) => setEmail(e.target.value)}
-                                                    value={email}
-                                                    id="email"
+                                                    id="username"
                                                     placeholder="Enter username"
+                                                    required=""
                                                 />
+                                                <div className="invalid-feedback">
+                                                    Please Enter Username
+                                                </div>
                                             </div>
                                             <div className="mb-3">
-                                                <div className="float-end">
-                                                    <a href="auth-recoverpw.html" className="text-muted">
-                                                        Forgot password?
-                                                    </a>
-                                                </div>
                                                 <label htmlFor="userpassword" className="form-label">
                                                     Password
                                                 </label>
-                                                <div className="position-relative auth-pass-inputgroup mb-3">
-                                                    <input
-                                                        type="password"
-                                                        onChange={(e) => setPassword(e.target.value)}
-                                                        value={password}
-                                                        className="form-control pe-5"
-                                                        placeholder="Enter Password"
-                                                        id="password-input"
-                                                    />
-                                                    <button
-                                                        className="btn btn-link position-absolute end-0 top-0 text-decoration-none text-muted"
-                                                        type="button"
-                                                        onClick={() => {
-                                                            var e = document.getElementById("password-input");
-                                                            "password" === e.type ? e.type = "text" : e.type = "password"
-                                                        }}
-                                                        id="password-addon"
-                                                    >
-                                                        <i className="ri-eye-fill align-middle"/>
-                                                    </button>
+                                                <input
+                                                    type="password"
+                                                    className="form-control"
+                                                    id="userpassword"
+                                                    placeholder="Enter password"
+                                                    required=""
+                                                />
+                                                <div className="invalid-feedback">
+                                                    Please Enter Password
                                                 </div>
                                             </div>
-                                            <div className="form-check form-check-info font-size-16">
-                                                <input
-                                                    className="form-check-input"
-                                                    type="checkbox"
-                                                    id="remember-check"
-                                                />
-                                                <label
-                                                    className="form-check-label font-size-14"
-                                                    htmlFor="remember-check"
-                                                >
-                                                    Remember me
-                                                </label>
+                                            <div className="mb-4">
+                                                <p className="mb-0">
+                                                    By registering you agree to the Doot{" "}
+                                                    <a href="#" className="text-primary">
+                                                        Terms of Use
+                                                    </a>
+                                                </p>
                                             </div>
-                                            <div className="text-center mt-4">
-                                                <button className="btn btn-primary w-100" type="submit">
-                                                    Log In
+                                            <div className="mb-3">
+                                                <button
+                                                    className="btn btn-primary w-100 waves-effect waves-light"
+                                                    type="submit"
+                                                >
+                                                    Register
                                                 </button>
                                             </div>
                                             <div className="mt-4 text-center">
                                                 <div className="signin-other-title">
                                                     <h5 className="font-size-14 mb-4 title">
-                                                        Sign in with
+                                                        Sign up using
                                                     </h5>
                                                 </div>
                                                 <div className="row">
@@ -153,13 +144,12 @@ function LoginForm({setIsAuthenticated}) {
                                         {/* end form */}
                                         <div className="mt-5 text-center text-muted">
                                             <p>
-                                                Don't have an account ?
+                                                Already have an account ?{" "}
                                                 <a
-                                                    href="/auth/register"
+                                                    href="/auth/login"
                                                     className="fw-medium text-decoration-underline"
                                                 >
-                                                    {" "}
-                                                    Register
+                                                    Login
                                                 </a>
                                             </p>
                                         </div>
@@ -188,7 +178,8 @@ function LoginForm({setIsAuthenticated}) {
             {/* end row */}
         </div>
         {/* end container-fluid */}
-    </div>)
+    </div>
+
 }
 
-export default LoginForm;
+export default Register;

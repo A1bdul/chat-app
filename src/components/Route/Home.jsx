@@ -12,6 +12,7 @@ function Home() {
     const [currentChat, setCurrentChat] = useState(null)
     const [socket, getSocket] = useState(null)
     const messagesScrollRef = useRef(null)
+
     const SocketSend = async (type, info) => {
         if (type === "typing") {
             socket.send(JSON.stringify({
@@ -21,9 +22,11 @@ function Home() {
             socket.send(JSON.stringify(info))
         }
     }
-    const socketClose = async(username) => {
+
+    const socketClose = async (setActiveChat) => {
         if (currentChat) {
             socket.close()
+            setCurrentChat(null)
         }
     }
     const fetchData = async () => {
@@ -53,9 +56,7 @@ function Home() {
                 Authorization: `Bearer ${localStorage.getItem("access_token")}`
             }
         })
-        console.log(requestMessage.data)
         getChatMessages(requestMessage["data"])
-
         chatSocket.onmessage = function (e) {
             const message = JSON.parse(e.data)
             if (message.command === "private_chat") {
@@ -65,21 +66,20 @@ function Home() {
     }
 
 
-    const {readyState} = useWebSocket(`${import.meta.env.VITE_WEBSOCKET}ws/home/?token=${localStorage.getItem('access_token')}`,{
+    const {
+        sendJsonMessage,
+        lastJsonMessage,
+        readyState
+    } = useWebSocket(`${import.meta.env.VITE_WEBSOCKET}home/?token=${localStorage.getItem('access_token')}`, {
         onOpen: () => {
-            console.log('Home connection is established !')
+            sendJsonMessage({'hello': "WORLD"})
         },
-        onMessage: (e) => {
-            let notification = JSON.parse(e.data)
-            if (user2 && user2 === notification.from){
-                readyState({
-                    messages_from: notification.from,
-                    seen : true,
-                    home: notification.from
-                })
-            }
-        },
+        shouldReconnect: true,
+        reconnectAttempts: 10
     })
+    const connectionStatus = {
+        [ReadyState.CONNECTING]: "Connecting"
+    }[readyState]
 
     useEffect(() => {
         fetchData();
@@ -90,9 +90,13 @@ function Home() {
     }
 
     return <div className="layout-wrapper d-lg-flex overflow-hidden">
-        <Navbar connectChatSocket={connectChatSocket} userInfo={userInfo} socketClose={socketClose} setUserInfo={setUserInfo} />
-        <ChatContainer currentChat={currentChat} user2={user2} messages={chatMessages} messagesScrollRef={messagesScrollRef} messagesEndRef={messagesEndRef} socketSend={SocketSend} />
-        <ContactModal />
+        <Navbar connectChatSocket={connectChatSocket} homeSocket={sendJsonMessage} homeResponse={lastJsonMessage}
+                userInfo={userInfo} socketClose={socketClose}
+                setUserInfo={setUserInfo}/>
+        <ChatContainer currentChat={currentChat} socketClose={socketClose} user2={user2} messages={chatMessages}
+                       messagesScrollRef={messagesScrollRef} homeResponse={lastJsonMessage}
+                       messagesEndRef={messagesEndRef} socketSend={SocketSend}/>
+        <ContactModal/>
     </div>
 }
 

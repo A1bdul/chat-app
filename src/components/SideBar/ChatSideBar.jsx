@@ -1,9 +1,10 @@
-import {useEffect, useRef, useState} from "react";
+import {useEffect, useCallback, useState} from "react";
 import axios from "axios";
 
-export default function ChatSideBar({ userInfo,socketClose, connectChatSocket }) {
+export default function ChatSideBar({userInfo, homeResponse, socketClose, homeSocket, connectChatSocket}) {
     const [isLoading, setIsLoading] = useState(true)
     const [userList, setUserList] = useState(null)
+    const [favouriteList, setFavouriteList] = useState(null)
     const [channelList, setChannelList] = useState(null)
     const [activeChat, setActiveChat] = useState(null)
 
@@ -15,8 +16,8 @@ export default function ChatSideBar({ userInfo,socketClose, connectChatSocket })
                         Authorization: `Bearer ${localStorage.getItem("access_token")}`
                     }
                 })
-            console.log(response)
             setUserList(response.data["usersList"])
+            setFavouriteList(response.data["favourite_users"])
             setChannelList(response.data["channelList"])
             setIsLoading(false)
         } catch (e) {
@@ -24,6 +25,26 @@ export default function ChatSideBar({ userInfo,socketClose, connectChatSocket })
         }
     }
 
+    const handleClickSendMessage = useCallback((user) => homeSocket({'command': "messages_read", 'to': user}), [])
+    useEffect(() => {
+        console.log(homeResponse)
+        if (homeResponse && homeResponse.notification) {
+            const updatedList = [...userList]
+            const targetItem = updatedList.find(item => item.user2.username === homeResponse.user);
+            if (targetItem) {
+                targetItem.unread = homeResponse.count;
+                const updatedItem = {
+                    ...targetItem,
+                    "unread": homeResponse.count
+                }
+
+                const index = updatedList.indexOf(targetItem);
+                updatedList[index] = updatedItem;
+                setUserList(updatedList);
+            }
+            console.log(targetItem, updatedList)
+        }
+    }, [homeResponse]);
     useEffect(() => {
         getChatRoom()
     }, []);
@@ -58,7 +79,7 @@ export default function ChatSideBar({ userInfo,socketClose, connectChatSocket })
                                     data-bs-toggle="modal"
                                     data-bs-target="#addContact-exampleModal"
                                 >
-                                    <i className="bx bx-plus" />
+                                    <i className="bx bx-plus"/>
                                 </button>
                             </div>
                         </div>
@@ -80,85 +101,109 @@ export default function ChatSideBar({ userInfo,socketClose, connectChatSocket })
                                 type="button"
                                 id="searchbtn-addon"
                             >
-                                <i className="bx bx-search align-middle" />
+                                <i className="bx bx-search align-middle"/>
                             </button>
                         </div>
                     </form>
                 </div>
+
                 {" "}
                 {/* .p-4 */}
                 <div className="chat-room-list" data-simplebar="">
                     {/* Start chat-message-list */}
-                    <h5 className="mb-3 px-4 mt-4 font-size-11 text-muted text-uppercase">
-                        Favourites
-                    </h5>
-                    <div className="chat-message-list">
-                        <ul
-                            className="list-unstyled chat-list chat-user-list"
-                            id="favourite-users"
-                        ></ul>
-                    </div>
-                    <div className="d-flex align-items-center px-4 mt-5 mb-2">
-                        <div className="flex-grow-1">
-                            <h4 className="mb-0 font-size-11 text-muted text-uppercase">
-                                Direct Messages
-                            </h4>
+
+                    {favouriteList === null && <>
+                        <h5 className="mb-3 px-4 mt-4 font-size-11 text-muted text-uppercase">
+                            Favourite
+                        </h5>
+                        <div className="chat-message-list">
+                            <ul
+                                className="list-unstyled chat-list chat-user-list"
+                                id="favourite-users"
+                            ></ul>
                         </div>
-                        <div className="flex-shrink-0">
-                            <div
-                                data-bs-toggle="tooltip"
-                                data-bs-trigger="hover"
-                                data-bs-placement="bottom"
-                                title="New Message"
-                            >
-                                {/* Button trigger modal */}
-                                <button
-                                    type="button"
-                                    className="btn btn-soft-primary btn-sm"
-                                    data-bs-toggle="modal"
-                                    data-bs-target=".contactModal"
+                    </>
+                    }
+                    {userList && <>
+                        <div className="d-flex align-items-center px-4 mt-5 mb-2">
+                            <div className="flex-grow-1">
+                                <h4 className="mb-0 font-size-11 text-muted text-uppercase">
+                                    Direct Messages
+                                </h4>
+                            </div>
+                            <div className="flex-shrink-0">
+                                <div
+                                    data-bs-toggle="tooltip"
+                                    data-bs-trigger="hover"
+                                    data-bs-placement="bottom"
+                                    title="New Message"
                                 >
-                                    <i className="bx bx-plus" />
-                                </button>
+                                    {/* Button trigger modal */}
+                                    <button
+                                        type="button"
+                                        className="btn btn-soft-primary btn-sm"
+                                        data-bs-toggle="modal"
+                                        data-bs-target=".contactModal"
+                                    >
+                                        <i className="bx bx-plus"/>
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div className="chat-message-list">
-                        <ul
-                            className="list-unstyled chat-list chat-user-list"
-                            id="usersList"
-                        >
-                            {userList.map((chats, key) => {
-                                const user2 = (userInfo.username !== userList[key]['user1'].username) ? userList[key]['user1'] : userList[key]['user2'];
-                                return (<li style={{ cursor:"pointer" }} onClick={() => {
-                                    socketClose(user2.username);
-                                    connectChatSocket("users", user2.username, user2)
-                                    setActiveChat(user2.username)
-                                }} className={`users-chatlist chatlist2 ${activeChat == user2.username ? "active" : ""}`} id={user2.username} key={chats.id} data-name="usersList">
-                                    <a className="unread-msg-user">
-                                        <div className="d-flex align-items-center">
-                                            <div className="chat-user-img online align-self-center me-2 ms-0">
-                                                {user2.profile["avatar"] ? <><img src={user2.profile["avatar"]} className="rounded-circle avatar-xs" alt=""></img><span className="user-status" id={`status-${user2.username}`}></span> </> : <div className="avatar-xs">
+
+                        <div className="chat-message-list">
+                            <ul
+                                className="list-unstyled chat-list chat-user-list"
+                                id="usersList"
+                            >
+                                {userList.map((chats, key) => {
+                                    const user2 = chats.user2;
+                                    return (<li style={{cursor: "pointer"}} onClick={() => {
+                                            socketClose(setActiveChat);
+                                            connectChatSocket("users", user2.username, user2);
+                                            setActiveChat(user2.username);
+                                            handleClickSendMessage(user2.username);
+                                            const updatedList = [...userList];
+                                            updatedList[key].unread = 0;
+                                            setUserList(updatedList)
+                                        }}
+                                                className={`users-chatlist chatlist2 ${activeChat === user2.username ? "active" : ""}`}
+                                                id={user2.username} key={chats.id} data-name="usersList">
+                                            <a className="unread-msg-user">
+                                                <div className="d-flex align-items-center">
+                                                    <div
+                                                        className="chat-user-img online align-self-center me-2 ms-0">
+                                                        {user2.profile["avatar"] ? <><img
+                                                                src={user2.profile["avatar"]}
+                                                                className="rounded-circle avatar-xs"
+                                                                alt=""></img><span
+                                                                className="user-status"
+                                                                id={`status-${user2.username}`}></span> </> :
+                                                            <div className="avatar-xs">
                                                     <span className="avatar-title rounded-circle bg-primary text-white">
-                                                        <span className="username">{user2.first_name[0]}{user2.last_name[0]}</span>
-                                                        <span id={`status-${user2.username}`} className="user-status" />
+                                                        <span
+                                                            className="username">{user2.first_name[0]}{user2.last_name[0]}</span>
+                                                        <span id={`status-${user2.username}`} className="user-status"/>
                                                     </span>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                    <div className="overflow-hidden">
+                                                        <p className="text-truncate mb-0">{user2.first_name} {user2.last_name}</p>
+                                                    </div>
+                                                    <div className="ms-auto">
+                                                    <span className="badge bg-dark-subtle text-reset rounded p-1"
+                                                          id={`unread-${user2.username}`}>{chats.unread > 0 ? chats.unread : ""}</span>
+                                                    </div>
                                                 </div>
-                                                }
-                                            </div>
-                                            <div className="overflow-hidden">
-                                                <p className="text-truncate mb-0">{user2.first_name} {user2.last_name}</p>
-                                            </div>
-                                            <div className="ms-auto">
-                                                <span className="badge badge-soft-dark rounded p-1" id={`unread-${user2.username}`}>{chats.unread[userInfo.username] > 0 ?  chats.unread[userInfo.username] : ""}</span>
-                                            </div>
-                                        </div>
-                                    </a>
-                                </li>
-                                )
-                            })}
-                        </ul>
-                    </div>
+                                            </a>
+                                        </li>
+                                    )
+                                })}
+                            </ul>
+                        </div>
+                    </>
+                    }
                     <div className="d-flex align-items-center px-4 mt-5 mb-2">
                         <div className="flex-grow-1">
                             <h4 className="mb-0 font-size-11 text-muted text-uppercase">
@@ -179,7 +224,7 @@ export default function ChatSideBar({ userInfo,socketClose, connectChatSocket })
                                     data-bs-toggle="modal"
                                     data-bs-target="#addgroup-exampleModal"
                                 >
-                                    <i className="bx bx-plus" />
+                                    <i className="bx bx-plus"/>
                                 </button>
                             </div>
                         </div>
@@ -193,15 +238,23 @@ export default function ChatSideBar({ userInfo,socketClose, connectChatSocket })
                                 return <li onClick={() => {
                                     connectChatSocket("group", channelList[key]["id"])
 
-                                }} key={channel.id} data-name="channel" style={{ cursor: "pointer" }}>
+                                }} key={channel.id} data-name="channel" style={{cursor: "pointer"}}>
                                     <a className="unread-msg-user">
                                         <div className="d-flex align-items-center">
                                             <div className="flex-shrink-0 avatar-xs me-2">
-                                                <span className="avatar-title rounded-circle bg-soft-light text-dark">#</span>
+                                                <span
+                                                    className="avatar-title rounded-circle bg-soft-light text-dark">#</span>
                                             </div>
                                             <div className="flex-grow-1 overflow-hidden">
                                                 <p className="text-truncate mb-0">{channel.name}</p>
-                                            </div>                        <div><div className="flex-shrink-0 ms-2"><span className="badge badge-soft-dark rounded p-1" id={`unread-${channel.id}`}></span></div></div>                        </div>                </a>            </li>
+                                            </div>
+                                            <div>
+                                                <div className="flex-shrink-0 ms-2"><span
+                                                    className="badge badge-soft-dark rounded p-1"
+                                                    id={`unread-${channel.id}`}></span></div>
+                                            </div>
+                                        </div>
+                                    </a></li>
                             })}
                         </ul>
                     </div>
@@ -267,7 +320,7 @@ export default function ChatSideBar({ userInfo,socketClose, connectChatSocket })
                                                 <h5 className="font-size-15 mb-0">Contacts</h5>
                                             </div>
                                             <div className="card-body p-2">
-                                                <div data-simplebar="" style={{ maxHeight: 150 }}>
+                                                <div data-simplebar="" style={{maxHeight: 150}}>
                                                     <div>
                                                         <div className="contact-list-title">A</div>
                                                         <ul className="list-unstyled contact-list">
@@ -547,7 +600,7 @@ export default function ChatSideBar({ userInfo,socketClose, connectChatSocket })
                 </div>
             </div>
             {/* End add group Modal */}
-        </div >
+        </div>
         {/* End chats tab-pane */}
     </>
 

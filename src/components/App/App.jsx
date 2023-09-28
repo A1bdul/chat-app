@@ -7,6 +7,7 @@ import Home from "../Route/Home.jsx";
 import {useEffect, useState} from "react";
 import axios from "axios";
 import PrivateRoute from "../Route/ProtectedRoute.jsx";
+import Register from "../Route/Register.jsx";
 
 
 function App() {
@@ -17,11 +18,11 @@ function App() {
         const token = localStorage.getItem("access_token")
         if (token) {
             try {
-                const response = await axios.post(`${import.meta.env.VITE_BACKEND_API}auth/jwt/verify.`,
+                const response = await axios.post(`${import.meta.env.VITE_BACKEND_API}auth/jwt/verify/.`,
                     {
                         token: `${token}`
-                        }
-                    )
+                    }
+                )
                 if (response.status === 200) {
                     setIsAuthenticated(true)
 
@@ -42,14 +43,17 @@ function App() {
     return (
         <Router>
             <Routes>
-                <Route path="/login" element={
-                    <PrivateRoute isAuthenticated={isAuthenticated} >
-                        <LoginForm setIsAuthenticated={setIsAuthenticated} />
+                <Route path="/auth/login" element={
+                    <PrivateRoute isAuthenticated={isAuthenticated}>
+                        <LoginForm setIsAuthenticated={setIsAuthenticated}/>
                     </PrivateRoute>}/>
                 <Route path="/" element={
                     <PrivateRoute isAuthenticated={isAuthenticated}>
-                        <Home />
+                        <Home/>
                     </PrivateRoute>}/>
+                <Route path="/auth/register" element={<PrivateRoute isAuthenticated={isAuthenticated}>
+                    <Register/>
+                </PrivateRoute>}/>
             </Routes>
         </Router>
     )

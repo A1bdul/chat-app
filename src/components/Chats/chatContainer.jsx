@@ -2,10 +2,19 @@ import UserChat from "./userChat"
 import GroupChat from "./groupChat"
 import {useState} from "react"
 
-export default function ChatContainer({currentChat, user2, messages,socketSend, messagesScrollRef, messagesEndRef}) {
+export default function ChatContainer({
+                                          currentChat,
+                                          socketClose,
+                                          user2,
+                                          messages,
+                                          socketSend,
+                                          homeResponse,
+                                          messagesScrollRef,
+                                          messagesEndRef
+                                      }) {
     const [messageText, setMessageText] = useState('')
     return <div
-        className="user-chat w-100"
+        className={`user-chat w-100 ${currentChat ? "user-chat-show" : ""}`}
         style={{
             backgroundImage:
                 'url("http://localhost:8080/assets/images/bg-pattern/pattern-05.png")'
@@ -21,14 +30,17 @@ export default function ChatContainer({currentChat, user2, messages,socketSend, 
                     style={{display: "block"}}
                 >
                     {/* conversation user */}
-                    {currentChat === "users" && <UserChat user2={user2} messagesScrollRef={messagesScrollRef} messagesEndRef={messagesEndRef} messages={messages}/>}
-                    {currentChat === "group" && <GroupChat/>}
+                    {currentChat === "users" &&
+                        <UserChat user2={user2} socketClose={socketClose} messagesScrollRef={messagesScrollRef}
+                                  messagesEndRef={messagesEndRef}
+                                  messages={messages}/>}
+                    {currentChat === "group" && <GroupChat />}
                     {/* conversation group */}
                 </div>
                 {/* start chat input section */}
-                <div
-                    className={`position-relative ${currentChat == "group" || currentChat == "users" ? "show" : "d-none"}`}
-                    id="chat-input-section"
+                <div style={{marginTop: 10}}
+                     className={`position-relative ${currentChat === "group" || currentChat === "users" ? "show" : "d-none"}`}
+                     id="chat-input-section"
                 >
                     <div className="chat-input-section p-3 p-lg-4">
                         <form id="chatinput-form" encType="multipart/form-data" onSubmit={(e) => {
@@ -39,8 +51,6 @@ export default function ChatContainer({currentChat, user2, messages,socketSend, 
                                 audio: [],
                                 msg: messageText,
                             }
-
-                            console.log("Message sent!!!")
                             socketSend("chat", send_message)
                             setMessageText('')
                         }}>

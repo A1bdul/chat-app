@@ -1,7 +1,7 @@
 import UserProfilePic from "../../assets/images/users/user-dummy-img.jpg"
 import {useEffect} from "react";
 
-export default function UserChat({user2, messages, messagesScrollRef, messagesEndRef}){
+export default function UserChat({user2, socketClose, messages, messagesScrollRef, messagesEndRef}){
   useEffect(() => {
     messagesEndRef()
   }, [messages]);
@@ -18,6 +18,10 @@ export default function UserChat({user2, messages, messagesScrollRef, messagesEn
                 <a
                   href=""
                   className="user-chat-remove font-size-18 p-1"
+                  onClick={(event)=> {
+                    event.preventDefault();
+                    socketClose()
+                  }}
                 >
                   <i className="bx bx-chevron-left align-middle" />
                 </a>
@@ -212,7 +216,7 @@ export default function UserChat({user2, messages, messagesScrollRef, messagesEn
                     id="users-conversation"
                   >
                    {messages.map((message) => (
-                   <li key={message.id} className={`chat-list ${user2.username==message.sender["username"] ? "left" :"right"}`} id=" chat-1">
+                   <li key={message.id} className={`chat-list ${user2.username===message.sender["username"] ? "left" :"right"}`} id=" chat-1">
                     <div className="conversation-list">
                       <div className="user-chat-content">
                         <div className="ctext-wrap">
@@ -285,9 +289,9 @@ export default function UserChat({user2, messages, messagesScrollRef, messagesEn
                           </div>
                         </div>
                         <div className="conversation-name">
-                          <small className="text-muted time">11:24 </small>{" "}
+                          <small className="text-muted time">{message.created_at} </small>{" "}
                           <span className="text-success check-message-icon">
-                            <i className="bx bx-check-double" />
+                            <i className={`bx ${!message.read ? "bx-check" :"bx-check-double"}`} />
                           </span>
                         </div>
                       </div>{" "}
