@@ -1,6 +1,7 @@
 import UserChat from "./userChat"
 import GroupChat from "./groupChat"
 import {useState} from "react"
+import ChatProfile from "./chatProfile.jsx";
 
 export default function ChatContainer({
                                           currentChat,
@@ -8,39 +9,42 @@ export default function ChatContainer({
                                           user2,
                                           messages,
                                           socketSend,
-                                          homeResponse,
+                                          userInfo,
                                           messagesScrollRef,
                                           messagesEndRef
                                       }) {
     const [messageText, setMessageText] = useState('')
+    const [showProfile, setShowProfile] = useState(false)
     return <div
-        className={`user-chat w-100 ${currentChat ? "user-chat-show" : ""}`}
+        className={`user-chat w-100 ${currentChat ? "user-chat-show" : ""} overflow-hidden`}
         style={{
             backgroundImage:
-                'url("http://localhost:8080/assets/images/bg-pattern/pattern-05.png")'
+                `url("${import.meta.env.VITE_BACKEND_API}assets/images/bg-pattern/pattern-05.png")`
         }}
     >
         <div className="user-chat-overlay"></div>
         <div className="chat-content d-lg-flex">
             {/* start chat conversation section */}
-            <div className="w-100  position-relative ">
+            <div className="w-100 overflow-hidden position-relative ">
                 <div
-                    id="empty-conversation"
+                    id="users-chat"
                     className="position-relative"
                     style={{display: "block"}}
                 >
                     {/* conversation user */}
                     {currentChat === "users" &&
                         <UserChat user2={user2} socketClose={socketClose} messagesScrollRef={messagesScrollRef}
-                                  messagesEndRef={messagesEndRef}
+                                  messagesEndRef={messagesEndRef} setShowProfile={setShowProfile}
+                                  showProfile={showProfile}
                                   messages={messages}/>}
-                    {currentChat === "group" && <GroupChat />}
+                    {currentChat === "group" && <GroupChat socketClose={socketClose} setShowProfile={setShowProfile} messagesScrollRef={messagesScrollRef}
+                                  messagesEndRef={messagesEndRef} messages={messages} userInfo={userInfo} channel={user2} showProfile={showProfile}/>}
                     {/* conversation group */}
                 </div>
                 {/* start chat input section */}
-                <div style={{marginTop: 10}}
-                     className={`position-relative ${currentChat === "group" || currentChat === "users" ? "show" : "d-none"}`}
-                     id="chat-input-section"
+                <div
+                    className={`position-relative ${currentChat === "group" || currentChat === "users" ? "show" : "d-none"}`}
+                    id="chat-input-section"
                 >
                     <div className="chat-input-section p-3 p-lg-4">
                         <form id="chatinput-form" encType="multipart/form-data" onSubmit={(e) => {
@@ -336,6 +340,9 @@ export default function ChatContainer({
                 {/* end chat input section */}
             </div>
             {/* end chat conversation section */}
+            {/*start User profile detail sidebar*/}
+            <ChatProfile showProfile={showProfile} user2={user2} setShowProfile={setShowProfile}/>
+            {/*end User profile detail sidebar*/}
         </div>
         {/* end user chat content */}
     </div>

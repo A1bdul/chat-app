@@ -1,6 +1,6 @@
-import '../../assets/css/app.min.css'
-import '../../assets/css/bootstrap.min.css'
-import '../../assets/css/icons.min.css'
+import '../../assets/css/app.min.css';
+import '../../assets/css/bootstrap.min.css';
+import '../../assets/css/icons.min.css';
 import {BrowserRouter as Router, Routes, Route} from "react-router-dom";
 import LoginForm from "../Route/Login.jsx";
 import Home from "../Route/Home.jsx";

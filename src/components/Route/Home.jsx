@@ -1,9 +1,9 @@
 import Navbar from './Navbar.jsx'
-import useWebSocket, {ReadyState} from "react-use-websocket";
+import useWebSocket from "react-use-websocket";
 import {useEffect, useRef, useState} from "react";
 import axios from "axios";
-import ContactModal from "../Modal/ContactModal.jsx";
 import ChatContainer from '../Chats/chatContainer.jsx';
+import Toast from "../App/Toast.jsx";
 
 function Home() {
     const [user2, setUser2] = useState({})
@@ -23,40 +23,21 @@ function Home() {
         }
     }
 
-    const socketClose = async (setActiveChat) => {
+    const socketClose = async () => {
         if (currentChat) {
+            getChatMessages([])
             socket.close()
             setCurrentChat(null)
         }
     }
-    const fetchData = async () => {
-        try {
-            const response = await axios.get(`${import.meta.env.VITE_BACKEND_API}user-api/.`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem("access_token")}`
-                    }
-                })
-            setUserInfo(response.data)
-        } catch (e) {
-            console.log(e)
-        }
-    }
 
     const connectChatSocket = async (type, socketId, user2) => {
-        let url = `${import.meta.env.VITE_WEBSOCKET}${socketId}?token=${localStorage.getItem('access_token')}`,
-            message_url = type === 'group' ? 'api/group-message/' + socketId : `api/room-messages/${socketId}`;
+        let url = `${import.meta.env.VITE_WEBSOCKET}${socketId}?token=${localStorage.getItem('access_token')}`;
 
         setUser2(user2)
         setCurrentChat(type)
         const chatSocket = new WebSocket(url)
         getSocket(chatSocket)
-        const requestMessage = await axios.get(`${import.meta.env.VITE_BACKEND_API}${message_url}`, {
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem("access_token")}`
-            }
-        })
-        getChatMessages(requestMessage["data"])
         chatSocket.onmessage = function (e) {
             const message = JSON.parse(e.data)
             if (message.command === "private_chat") {
@@ -68,35 +49,39 @@ function Home() {
 
     const {
         sendJsonMessage,
-        lastJsonMessage,
-        readyState
+        lastJsonMessage
     } = useWebSocket(`${import.meta.env.VITE_WEBSOCKET}home/?token=${localStorage.getItem('access_token')}`, {
         onOpen: () => {
             sendJsonMessage({'hello': "WORLD"})
+        }, onMessage: event => {
+            let data = JSON.parse(event.data)
+            if (data["chat_messages"]) getChatMessages(data["payload"])
         },
         shouldReconnect: true,
         reconnectAttempts: 10
     })
-    const connectionStatus = {
-        [ReadyState.CONNECTING]: "Connecting"
-    }[readyState]
 
     useEffect(() => {
-        fetchData();
+        axios.get(`${import.meta.env.VITE_BACKEND_API}user-api/.`,
+            {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("access_token")}`
+                }
+            }).then(r => setUserInfo(r.data))
     }, []);
 
     const messagesEndRef = () => {
         messagesScrollRef.current.scrollIntoView({behavior: 'smooth'})
     }
 
-    return <div className="layout-wrapper d-lg-flex overflow-hidden">
+    return <div className="layout-wrapper d-lg-flex">
         <Navbar connectChatSocket={connectChatSocket} homeSocket={sendJsonMessage} homeResponse={lastJsonMessage}
                 userInfo={userInfo} socketClose={socketClose}
                 setUserInfo={setUserInfo}/>
         <ChatContainer currentChat={currentChat} socketClose={socketClose} user2={user2} messages={chatMessages}
                        messagesScrollRef={messagesScrollRef} homeResponse={lastJsonMessage}
-                       messagesEndRef={messagesEndRef} socketSend={SocketSend}/>
-        <ContactModal/>
+                       messagesEndRef={messagesEndRef} socketSend={SocketSend} userInfo={userInfo}/>
+    <Toast />
     </div>
 }
 

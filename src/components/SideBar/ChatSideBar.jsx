@@ -1,52 +1,79 @@
-import {useEffect, useCallback, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import axios from "axios";
+import ContactModal from "../Modal/ContactModal.jsx";
+import GroupCreateModal from "../Modal/groupCreateModal.jsx";
 
-export default function ChatSideBar({userInfo, homeResponse, socketClose, homeSocket, connectChatSocket}) {
+export default function ChatSideBar({
+                                        homeResponse,
+                                        socketClose,
+                                        contactsList,
+                                        homeSocket,
+                                        connectChatSocket
+                                    }) {
     const [isLoading, setIsLoading] = useState(true)
     const [userList, setUserList] = useState(null)
     const [favouriteList, setFavouriteList] = useState(null)
     const [channelList, setChannelList] = useState(null)
     const [activeChat, setActiveChat] = useState(null)
+    const handleClickSendMessage = useCallback((command, data) => homeSocket({'command': command, 'to': data}), [])
 
-    const getChatRoom = async () => {
-        try {
-            const response = await axios.get(`${import.meta.env.VITE_BACKEND_API}api/all-room/.`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem("access_token")}`
+
+    useEffect(() => {
+        if (homeResponse && homeResponse.notification) {
+            if (homeResponse.private) {
+                const foundInList1 = userList.find(item => item.id === homeResponse.user)
+                if (foundInList1) {
+                    const updatedList = userList.map(item => {
+                        if (item.user2.id === homeResponse.user) {
+                            return {...item, count: homeResponse.count}
+                        }
+                        return item
+                    })
+                    setUserList(updatedList)
+                }
+                const foundInList2 = favouriteList.find(item => item.id === homeResponse.user)
+                if (foundInList2) {
+                    const updatedList = favouriteList.map(item => {
+                        if (item.user2.id === homeResponse.user) {
+                            return {...item, count: homeResponse.count}
+                        }
+                        return item
+                    })
+                    setFavouriteList(updatedList)
+                }
+            } else {
+                const updatedList = [...channelList]
+                const targetItem = updatedList.find(item => item.user2.id === homeResponse.user);
+                if (targetItem) {
+                    targetItem.unread = homeResponse.count;
+                    const updatedItem = {
+                        ...targetItem,
+                        "unread": homeResponse.count
                     }
-                })
+
+                    const index = updatedList.indexOf(targetItem);
+                    updatedList[index] = updatedItem;
+                    setUserList(updatedList);
+                }
+            }
+        }
+        if (homeResponse && homeResponse.channel_created) {
+            if (homeResponse.private) setUserList((prevState) => [...prevState, homeResponse.room])
+            else setChannelList((prevState) => [...prevState, homeResponse.room])
+        }
+    }, [homeResponse]);
+    useEffect(() => {
+        axios.get(`${import.meta.env.VITE_BACKEND_API}api/all-room/.`,
+            {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("access_token")}`
+                }
+            }).then(response => {
             setUserList(response.data["usersList"])
             setFavouriteList(response.data["favourite_users"])
             setChannelList(response.data["channelList"])
             setIsLoading(false)
-        } catch (e) {
-            console.log(e)
-        }
-    }
-
-    const handleClickSendMessage = useCallback((user) => homeSocket({'command': "messages_read", 'to': user}), [])
-    useEffect(() => {
-        console.log(homeResponse)
-        if (homeResponse && homeResponse.notification) {
-            const updatedList = [...userList]
-            const targetItem = updatedList.find(item => item.user2.username === homeResponse.user);
-            if (targetItem) {
-                targetItem.unread = homeResponse.count;
-                const updatedItem = {
-                    ...targetItem,
-                    "unread": homeResponse.count
-                }
-
-                const index = updatedList.indexOf(targetItem);
-                updatedList[index] = updatedItem;
-                setUserList(updatedList);
-            }
-            console.log(targetItem, updatedList)
-        }
-    }, [homeResponse]);
-    useEffect(() => {
-        getChatRoom()
+        })
     }, []);
     if (isLoading) return <></>
 
@@ -159,15 +186,15 @@ export default function ChatSideBar({userInfo, homeResponse, socketClose, homeSo
                                 {userList.map((chats, key) => {
                                     const user2 = chats.user2;
                                     return (<li style={{cursor: "pointer"}} onClick={() => {
-                                            socketClose(setActiveChat);
-                                            connectChatSocket("users", user2.username, user2);
-                                            setActiveChat(user2.username);
-                                            handleClickSendMessage(user2.username);
+                                            socketClose();
+                                            connectChatSocket("users", user2.id, user2);
+                                            setActiveChat(user2.id);
+                                            handleClickSendMessage("read_messages", user2.id);
                                             const updatedList = [...userList];
                                             updatedList[key].unread = 0;
                                             setUserList(updatedList)
                                         }}
-                                                className={`users-chatlist chatlist2 ${activeChat === user2.username ? "active" : ""}`}
+                                                className={`users-chatlist chatlist2 ${activeChat === user2.id ? "active" : ""}`}
                                                 id={user2.username} key={chats.id} data-name="usersList">
                                             <a className="unread-msg-user">
                                                 <div className="d-flex align-items-center">
@@ -235,10 +262,15 @@ export default function ChatSideBar({userInfo, homeResponse, socketClose, homeSo
                             id="channelList"
                         >
                             {channelList.map((channel, key) => {
-                                return <li onClick={() => {
-                                    connectChatSocket("group", channelList[key]["id"])
-
-                                }} key={channel.id} data-name="channel" style={{cursor: "pointer"}}>
+                                return <li key={key} onClick={() => {
+                                    socketClose();
+                                    connectChatSocket("group", channel.id, channel)
+                                    setActiveChat(channel.id);
+                                    const updatedList = [...channelList];
+                                    updatedList[key].unread = 0;
+                                    setChannelList(updatedList)
+                                }} data-name="channel" style={{cursor: "pointer"}}
+                                           className={`${activeChat === channel.id ? "active" : ""}`}>
                                     <a className="unread-msg-user">
                                         <div className="d-flex align-items-center">
                                             <div className="flex-shrink-0 avatar-xs me-2">
@@ -250,8 +282,8 @@ export default function ChatSideBar({userInfo, homeResponse, socketClose, homeSo
                                             </div>
                                             <div>
                                                 <div className="flex-shrink-0 ms-2"><span
-                                                    className="badge badge-soft-dark rounded p-1"
-                                                    id={`unread-${channel.id}`}></span></div>
+                                                    className="badge bg-dark-subtle text-reset rounded p-1"
+                                                >{channel.unread > 0 ? channel.unread : ""}</span></div>
                                             </div>
                                         </div>
                                     </a></li>
@@ -263,345 +295,13 @@ export default function ChatSideBar({userInfo, homeResponse, socketClose, homeSo
             </div>
             {/* Start chats content */}
             {/* Start add group Modal */}
-            <div
-                className="modal fade"
-                id="addgroup-exampleModal"
-                tabIndex={-1}
-                role="dialog"
-                aria-labelledby="addgroup-exampleModalLabel"
-                aria-hidden="true"
-            >
-                <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-                    <div className="modal-content modal-header-colored shadow-lg border-0">
-                        <div className="modal-header">
-                            <h5
-                                className="modal-title text-white font-size-16"
-                                id="addgroup-exampleModalLabel"
-                            >
-                                Create New Group
-                            </h5>
-                            <button
-                                type="button"
-                                className="btn-close btn-close-white"
-                                data-bs-dismiss="modal"
-                                aria-label="Close"
-                            ></button>
-                        </div>
-                        <div className="modal-body p-4">
-                            <form>
-                                <div className="mb-4">
-                                    <label htmlFor="addgroupname-input" className="form-label">
-                                        Group Name
-                                    </label>
-                                    <input
-                                        type="text"
-                                        className="form-control"
-                                        id="addgroupname-input"
-                                        placeholder="Enter Group Name"
-                                    />
-                                </div>
-                                <div className="mb-4">
-                                    <label className="form-label">Group Members</label>
-                                    <div className="mb-3">
-                                        <button
-                                            className="btn btn-light btn-sm"
-                                            type="button"
-                                            data-bs-toggle="collapse"
-                                            data-bs-target="#groupmembercollapse"
-                                            aria-expanded="false"
-                                            aria-controls="groupmembercollapse"
-                                        >
-                                            Select Members
-                                        </button>
-                                    </div>
-                                    <div className="collapse" id="groupmembercollapse">
-                                        <div className="card border">
-                                            <div className="card-header">
-                                                <h5 className="font-size-15 mb-0">Contacts</h5>
-                                            </div>
-                                            <div className="card-body p-2">
-                                                <div data-simplebar="" style={{maxHeight: 150}}>
-                                                    <div>
-                                                        <div className="contact-list-title">A</div>
-                                                        <ul className="list-unstyled contact-list">
-                                                            <li>
-                                                                <div className="form-check">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        className="form-check-input"
-                                                                        id="memberCheck1"
-                                                                        defaultChecked=""
-                                                                    />
-                                                                    <label
-                                                                        className="form-check-label"
-                                                                        htmlFor="memberCheck1"
-                                                                    >
-                                                                        Albert Rodarte
-                                                                    </label>
-                                                                </div>
-                                                            </li>
-                                                            <li>
-                                                                <div className="form-check">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        className="form-check-input"
-                                                                        id="memberCheck2"
-                                                                    />
-                                                                    <label
-                                                                        className="form-check-label"
-                                                                        htmlFor="memberCheck2"
-                                                                    >
-                                                                        Allison Etter
-                                                                    </label>
-                                                                </div>
-                                                            </li>
-                                                        </ul>
-                                                    </div>
-                                                    <div>
-                                                        <div className="contact-list-title">C</div>
-                                                        <ul className="list-unstyled contact-list">
-                                                            <li>
-                                                                <div className="form-check">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        className="form-check-input"
-                                                                        id="memberCheck3"
-                                                                    />
-                                                                    <label
-                                                                        className="form-check-label"
-                                                                        htmlFor="memberCheck3"
-                                                                    >
-                                                                        Craig Smiley
-                                                                    </label>
-                                                                </div>
-                                                            </li>
-                                                        </ul>
-                                                    </div>
-                                                    <div>
-                                                        <div className="contact-list-title">D</div>
-                                                        <ul className="list-unstyled contact-list">
-                                                            <li>
-                                                                <div className="form-check">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        className="form-check-input"
-                                                                        id="memberCheck4"
-                                                                    />
-                                                                    <label
-                                                                        className="form-check-label"
-                                                                        htmlFor="memberCheck4"
-                                                                    >
-                                                                        Daniel Clay
-                                                                    </label>
-                                                                </div>
-                                                            </li>
-                                                        </ul>
-                                                    </div>
-                                                    <div>
-                                                        <div className="contact-list-title">I</div>
-                                                        <ul className="list-unstyled contact-list">
-                                                            <li>
-                                                                <div className="form-check">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        className="form-check-input"
-                                                                        id="memberCheck5"
-                                                                    />
-                                                                    <label
-                                                                        className="form-check-label"
-                                                                        htmlFor="memberCheck5"
-                                                                    >
-                                                                        Iris Wells
-                                                                    </label>
-                                                                </div>
-                                                            </li>
-                                                        </ul>
-                                                    </div>
-                                                    <div>
-                                                        <div className="contact-list-title">J</div>
-                                                        <ul className="list-unstyled contact-list">
-                                                            <li>
-                                                                <div className="form-check">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        className="form-check-input"
-                                                                        id="memberCheck6"
-                                                                    />
-                                                                    <label
-                                                                        className="form-check-label"
-                                                                        htmlFor="memberCheck6"
-                                                                    >
-                                                                        Juan Flakes
-                                                                    </label>
-                                                                </div>
-                                                            </li>
-                                                            <li>
-                                                                <div className="form-check">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        className="form-check-input"
-                                                                        id="memberCheck7"
-                                                                    />
-                                                                    <label
-                                                                        className="form-check-label"
-                                                                        htmlFor="memberCheck7"
-                                                                    >
-                                                                        John Hall
-                                                                    </label>
-                                                                </div>
-                                                            </li>
-                                                            <li>
-                                                                <div className="form-check">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        className="form-check-input"
-                                                                        id="memberCheck8"
-                                                                    />
-                                                                    <label
-                                                                        className="form-check-label"
-                                                                        htmlFor="memberCheck8"
-                                                                    >
-                                                                        Joy Southern
-                                                                    </label>
-                                                                </div>
-                                                            </li>
-                                                        </ul>
-                                                    </div>
-                                                    <div>
-                                                        <div className="contact-list-title">M</div>
-                                                        <ul className="list-unstyled contact-list">
-                                                            <li>
-                                                                <div className="form-check">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        className="form-check-input"
-                                                                        id="memberCheck9"
-                                                                    />
-                                                                    <label
-                                                                        className="form-check-label"
-                                                                        htmlFor="memberCheck9"
-                                                                    >
-                                                                        Michael Hinton
-                                                                    </label>
-                                                                </div>
-                                                            </li>
-                                                            <li>
-                                                                <div className="form-check">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        className="form-check-input"
-                                                                        id="memberCheck10"
-                                                                    />
-                                                                    <label
-                                                                        className="form-check-label"
-                                                                        htmlFor="memberCheck10"
-                                                                    >
-                                                                        Mary Farmer
-                                                                    </label>
-                                                                </div>
-                                                            </li>
-                                                        </ul>
-                                                    </div>
-                                                    <div>
-                                                        <div className="contact-list-title">P</div>
-                                                        <ul className="list-unstyled contact-list">
-                                                            <li>
-                                                                <div className="form-check">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        className="form-check-input"
-                                                                        id="memberCheck11"
-                                                                    />
-                                                                    <label
-                                                                        className="form-check-label"
-                                                                        htmlFor="memberCheck11"
-                                                                    >
-                                                                        Phillis Griffin
-                                                                    </label>
-                                                                </div>
-                                                            </li>
-                                                        </ul>
-                                                    </div>
-                                                    <div>
-                                                        <div className="contact-list-title">R</div>
-                                                        <ul className="list-unstyled contact-list">
-                                                            <li>
-                                                                <div className="form-check">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        className="form-check-input"
-                                                                        id="memberCheck12"
-                                                                    />
-                                                                    <label
-                                                                        className="form-check-label"
-                                                                        htmlFor="memberCheck12"
-                                                                    >
-                                                                        Rocky Jackson
-                                                                    </label>
-                                                                </div>
-                                                            </li>
-                                                        </ul>
-                                                    </div>
-                                                    <div>
-                                                        <div className="contact-list-title">S</div>
-                                                        <ul className="list-unstyled contact-list">
-                                                            <li>
-                                                                <div className="form-check">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        className="form-check-input"
-                                                                        id="memberCheck13"
-                                                                    />
-                                                                    <label
-                                                                        className="form-check-label"
-                                                                        htmlFor="memberCheck13"
-                                                                    >
-                                                                        Simon Velez
-                                                                    </label>
-                                                                </div>
-                                                            </li>
-                                                        </ul>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="mb-3">
-                                    <label
-                                        htmlFor="addgroupdescription-input"
-                                        className="form-label"
-                                    >
-                                        Description
-                                    </label>
-                                    <textarea
-                                        className="form-control"
-                                        id="addgroupdescription-input"
-                                        rows={3}
-                                        placeholder="Enter Description"
-                                        defaultValue={""}
-                                    />
-                                </div>
-                            </form>
-                        </div>
-                        <div className="modal-footer">
-                            <button
-                                type="button"
-                                className="btn btn-link"
-                                data-bs-dismiss="modal"
-                            >
-                                Close
-                            </button>
-                            <button type="button" className="btn btn-primary">
-                                Create Groups
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <GroupCreateModal contactsList={contactsList} handleClickSendMessage={handleClickSendMessage}/>
             {/* End add group Modal */}
         </div>
         {/* End chats tab-pane */}
+        <ContactModal contactsList={contactsList} socketClose={socketClose} connectChatSocket={connectChatSocket}
+                      setActiveChat={setActiveChat}/>
+
     </>
 
 }
