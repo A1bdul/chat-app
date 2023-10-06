@@ -1,7 +1,7 @@
 import {useState} from 'react'
 import axios from "axios";
 import useDocumentTitle from '../App/changeDocument.jsx';
-import {  useNavigate } from 'react-router-dom';
+import {Link, useNavigate} from 'react-router-dom';
 
 function LoginForm({setIsAuthenticated}) {
 
@@ -154,13 +154,10 @@ function LoginForm({setIsAuthenticated}) {
                                         <div className="mt-5 text-center text-muted">
                                             <p>
                                                 Don't have an account ?
-                                                <a
-                                                    href="/auth/register"
-                                                    className="fw-medium text-decoration-underline"
-                                                >
+                                                <Link to={`/auth/register`} className={`fw-medium text-decoration-underline`}>
                                                     {" "}
                                                     Register
-                                                </a>
+                                                </Link>
                                             </p>
                                         </div>
                                     </div>
@@ -168,17 +165,6 @@ function LoginForm({setIsAuthenticated}) {
                                 {/* end col */}
                             </div>
                             {/* end row */}
-                            <div className="row">
-                                <div className="col-xl-12">
-                                    <div className="text-center text-muted p-4">
-                                        <p className="mb-0">
-                                            © Doot. Crafted with{" "}
-                                            <i className="mdi mdi-heart text-danger"/> by Themesbrand
-                                        </p>
-                                    </div>
-                                </div>
-                                {/* end col */}
-                            </div>
                             {/* end row */}
                         </div>
                     </div>

@@ -8,6 +8,7 @@ import {useEffect, useState} from "react";
 import axios from "axios";
 import PrivateRoute from "../Route/ProtectedRoute.jsx";
 import Register from "../Route/Register.jsx";
+import ActivateAccount from "../Route/Auth.jsx";
 
 
 function App() {
@@ -54,6 +55,7 @@ function App() {
                 <Route path="/auth/register" element={<PrivateRoute isAuthenticated={isAuthenticated}>
                     <Register/>
                 </PrivateRoute>}/>
+                <Route path="/account/activate/:uid/:token" element={<ActivateAccount/>}/>
             </Routes>
         </Router>
     )

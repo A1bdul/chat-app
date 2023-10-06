@@ -20,22 +20,23 @@ export default function ChatSideBar({
 
     useEffect(() => {
         if (homeResponse && homeResponse.notification) {
+            console.log(homeResponse)
             if (homeResponse.private) {
-                const foundInList1 = userList.find(item => item.id === homeResponse.user)
+                const foundInList1 = userList.find(item => item.user2.id === homeResponse.user)
                 if (foundInList1) {
                     const updatedList = userList.map(item => {
                         if (item.user2.id === homeResponse.user) {
-                            return {...item, count: homeResponse.count}
+                            return {...item, "unread": homeResponse.count}
                         }
                         return item
                     })
                     setUserList(updatedList)
                 }
-                const foundInList2 = favouriteList.find(item => item.id === homeResponse.user)
+                const foundInList2 = favouriteList.find(item => item.user2.id === homeResponse.user)
                 if (foundInList2) {
                     const updatedList = favouriteList.map(item => {
                         if (item.user2.id === homeResponse.user) {
-                            return {...item, count: homeResponse.count}
+                            return {...item, unread: homeResponse.count}
                         }
                         return item
                     })
@@ -43,7 +44,7 @@ export default function ChatSideBar({
                 }
             } else {
                 const updatedList = [...channelList]
-                const targetItem = updatedList.find(item => item.user2.id === homeResponse.user);
+                const targetItem = updatedList.find(item => item.id === homeResponse.user);
                 if (targetItem) {
                     targetItem.unread = homeResponse.count;
                     const updatedItem = {
@@ -53,7 +54,7 @@ export default function ChatSideBar({
 
                     const index = updatedList.indexOf(targetItem);
                     updatedList[index] = updatedItem;
-                    setUserList(updatedList);
+                    setChannelList(updatedList);
                 }
             }
         }
@@ -185,47 +186,50 @@ export default function ChatSideBar({
                             >
                                 {userList.map((chats, key) => {
                                     const user2 = chats.user2;
-                                    return (<li style={{cursor: "pointer"}} onClick={() => {
-                                            socketClose();
-                                            connectChatSocket("users", user2.id, user2);
-                                            setActiveChat(user2.id);
-                                            handleClickSendMessage("read_messages", user2.id);
-                                            const updatedList = [...userList];
-                                            updatedList[key].unread = 0;
-                                            setUserList(updatedList)
-                                        }}
+                                    if (user2) {
+                                        return (
+                                            <li style={{cursor: "pointer"}} onClick={() => {
+                                                socketClose();
+                                                connectChatSocket("users", user2.id, user2);
+                                                setActiveChat(user2.id);
+                                                handleClickSendMessage("read_messages", user2.id);
+                                                const updatedList = [...userList];
+                                                updatedList[key].unread = 0;
+                                                setUserList(updatedList)
+                                            }}
                                                 className={`users-chatlist chatlist2 ${activeChat === user2.id ? "active" : ""}`}
                                                 id={user2.username} key={chats.id} data-name="usersList">
-                                            <a className="unread-msg-user">
-                                                <div className="d-flex align-items-center">
-                                                    <div
-                                                        className="chat-user-img online align-self-center me-2 ms-0">
-                                                        {user2.profile["avatar"] ? <><img
-                                                                src={user2.profile["avatar"]}
-                                                                className="rounded-circle avatar-xs"
-                                                                alt=""></img><span
-                                                                className="user-status"
-                                                                id={`status-${user2.username}`}></span> </> :
-                                                            <div className="avatar-xs">
+                                                <a className="unread-msg-user">
+                                                    <div className="d-flex align-items-center">
+                                                        <div
+                                                            className="chat-user-img online align-self-center me-2 ms-0">
+                                                            {user2.profile && user2.profile["avatar"] ? <><img
+                                                                    src={user2.profile["avatar"]}
+                                                                    className="rounded-circle avatar-xs"
+                                                                    alt=""></img><span
+                                                                    className="user-status"
+                                                                    id={`status-${user2.username}`}></span> </> :
+                                                                <div className="avatar-xs">
                                                     <span className="avatar-title rounded-circle bg-primary text-white">
                                                         <span
                                                             className="username">{user2.first_name[0]}{user2.last_name[0]}</span>
                                                         <span id={`status-${user2.username}`} className="user-status"/>
                                                     </span>
-                                                            </div>
-                                                        }
-                                                    </div>
-                                                    <div className="overflow-hidden">
-                                                        <p className="text-truncate mb-0">{user2.first_name} {user2.last_name}</p>
-                                                    </div>
-                                                    <div className="ms-auto">
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                        <div className="overflow-hidden">
+                                                            <p className="text-truncate mb-0">{user2.first_name} {user2.last_name}</p>
+                                                        </div>
+                                                        <div className="ms-auto">
                                                     <span className="badge bg-dark-subtle text-reset rounded p-1"
                                                           id={`unread-${user2.username}`}>{chats.unread > 0 ? chats.unread : ""}</span>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </a>
-                                        </li>
-                                    )
+                                                </a>
+                                            </li>
+                                        )
+                                    }
                                 })}
                             </ul>
                         </div>

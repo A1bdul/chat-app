@@ -11,7 +11,7 @@ export default function ChatContainer({
                                           socketSend,
                                           userInfo,
                                           messagesScrollRef,
-                                          messagesEndRef
+                                          messagesEndRef,
                                       }) {
     const [messageText, setMessageText] = useState('')
     const [showProfile, setShowProfile] = useState(false)

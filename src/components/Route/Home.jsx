@@ -56,6 +56,12 @@ function Home() {
         }, onMessage: event => {
             let data = JSON.parse(event.data)
             if (data["chat_messages"]) getChatMessages(data["payload"])
+            if (data.read_messages) {
+                const updatedList = chatMessages.map(item => {
+                    return {...item, "read": true}
+                })
+                getChatMessages(updatedList)
+            }
         },
         shouldReconnect: true,
         reconnectAttempts: 10
@@ -81,7 +87,7 @@ function Home() {
         <ChatContainer currentChat={currentChat} socketClose={socketClose} user2={user2} messages={chatMessages}
                        messagesScrollRef={messagesScrollRef} homeResponse={lastJsonMessage}
                        messagesEndRef={messagesEndRef} socketSend={SocketSend} userInfo={userInfo}/>
-    <Toast />
+        <Toast homeResponse={lastJsonMessage}/>
     </div>
 }
 
